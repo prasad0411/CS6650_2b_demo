@@ -1,0 +1,17 @@
+{
+  "dashboard": {
+    "title": "Product API RED",
+    "timezone": "browser",
+    "time": {"from": "now-15m", "to": "now"},
+    "refresh": "5s",
+    "panels": [
+      {"id":1,"title":"Rate (req/s)","type":"timeseries","gridPos":{"h":8,"w":8,"x":0,"y":0},
+       "targets":[{"expr":"sum(rate(http_requests_total[1m]))","refId":"A"}]},
+      {"id":2,"title":"Error ratio","type":"timeseries","gridPos":{"h":8,"w":8,"x":8,"y":0},
+       "targets":[{"expr":"sum(rate(http_errors_total[1m])) / sum(rate(http_requests_total[1m]))","refId":"A"}]},
+      {"id":3,"title":"p95 latency (s)","type":"timeseries","gridPos":{"h":8,"w":8,"x":16,"y":0},
+       "targets":[{"expr":"histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))","refId":"A"}]}
+    ]
+  },
+  "overwrite": true
+}

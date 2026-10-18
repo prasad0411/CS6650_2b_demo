@@ -1,53 +1,71 @@
-## Instructions
+# HW5: Online Store, Product API
 
-### Prepare Credentials
+## Part II: Product API
+Go + Gin service implementing the Product endpoints from api.yaml. Products are stored in an in memory map keyed by product ID, guarded by a sync.RWMutex for safe concurrent access.
 
-Retrieve you temporary credentials from Learner's Lab.
-Enter your configuration when prompted:
-```
-aws configure
-```
+### Where things are
+- Server code: src/product-service.go
+- Dockerfile: src/Dockerfile
+- Infrastructure: terraform/ (Part III)
 
-And set your session token:
-```
-aws configure set aws_session_token <YOUR-TEMP-SESSION-TOKEBN>
-```
+### Run locally
+    cd src
+    go run .
+    # server listens on :8080
 
-### Apply Infrastructure
-```
-cd terraform
-terraform init
-terraform apply -auto-approve
-```
+### Run in Docker
+    cd src
+    docker build -t product-api .
+    docker run -d -p 8080:8080 product-api
 
-### Send Requests
-Make sure you are in terraform folder
+### Endpoints and every response code
 
-Get public ip address
-```
-aws ec2 describe-network-interfaces \
---network-interface-ids $(
-    aws ecs describe-tasks \
-    --cluster $(terraform output -raw ecs_cluster_name) \
-    --tasks $(
-        aws ecs list-tasks \
-        --cluster $(terraform output -raw ecs_cluster_name) \
-        --service-name $(terraform output -raw ecs_service_name) \
-        --query 'taskArns[0]' --output text
-    ) \
-    --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" \
-    --output text
-) \
---query 'NetworkInterfaces[0].Association.PublicIp' \
---output text
-```
+GET /products/{productId}
+- 200 product found, returns the Product JSON
+- 404 product not found, or productId not a positive integer
+- 500 internal server error (Gin recovery on panic)
 
-Send some requests:
-```
-curl http://<PUBLIC-IP-ADDRESS>:8080/albums
-```
+POST /products/{productId}/details
+- 204 product details stored successfully
+- 400 invalid input (bad path id or body failing schema validation)
+- 404 product not found (applies if the product must pre exist; this design upserts)
+- 500 internal server error
 
-## Clean Up
-```
-terraform destroy -auto-approve
-```
+### Example calls and responses
+
+404, GET a product that does not exist:
+    curl -i http://localhost:8080/products/1
+
+400, POST an invalid body:
+    curl -i -X POST http://localhost:8080/products/1/details \
+      -H "Content-Type: application/json" -d '{"sku":""}'
+
+204, POST a valid product:
+    curl -i -X POST http://localhost:8080/products/1/details \
+      -H "Content-Type: application/json" \
+      -d '{"product_id":1,"sku":"ABC-123-XYZ","manufacturer":"Acme Corporation","category_id":456,"weight":1250,"some_other_id":789}'
+
+200, GET the product just added:
+    curl -i http://localhost:8080/products/1
+
+400, POST with a non integer path id:
+    curl -i -X POST http://localhost:8080/products/abc/details \
+      -H "Content-Type: application/json" -d '{}'
+
+## Part V: Observability
+
+### RED signals
+The server exposes /metrics (Prometheus) and emits one JSON log line per request.
+- Rate: sum(rate(http_requests_total[1m]))
+- Errors: sum(rate(http_errors_total[1m])) / sum(rate(http_requests_total[1m]))
+- Duration p95: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le))
+
+Prometheus and Grafana run locally via observability/docker-compose.yml. Prometheus scrapes the server's /metrics every 5s; the Grafana dashboard "Product API RED" has one panel per signal. See the dashboard screenshot showing idle vs loaded behaviour during a Locust run.
+
+### Sample request logs (from the loaded run)
+{"time":"...","level":"INFO","msg":"request","method":"GET","endpoint":"/products/:productId","status":200,"duration_ms":2.1}
+{"time":"...","level":"INFO","msg":"request","method":"POST","endpoint":"/products/:productId/details","status":204,"duration_ms":0.4}
+{"time":"...","level":"INFO","msg":"request","method":"GET","endpoint":"/products/:productId","status":404,"duration_ms":1.1}
+
+### Dashboard vs logs
+I look at the Grafana dashboard for live, aggregate health, spotting a rate drop or latency spike as it happens. I look at the logs for after-the-fact, per-request debugging, finding which specific endpoint and status caused a problem when nobody had Grafana open at the time.

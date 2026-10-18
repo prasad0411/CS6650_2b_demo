@@ -1,4 +1,8 @@
 **.tfvars
 **.tfstate
 **.tfstate.*
-**/.terraform/
+**/.terraform/*.tfstate*
+.terraform/
+*.tfvars
+src/server
+ip.env
