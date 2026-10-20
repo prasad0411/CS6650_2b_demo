@@ -1,62 +1,55 @@
 variable "service_name" {
-  type        = string
-  description = "Base name for ECS resources"
+  type = string
 }
-
 variable "image" {
-  type        = string
-  description = "ECR image URI (with tag)"
+  type = string
 }
-
 variable "container_port" {
-  type        = number
-  description = "Port your app listens on"
+  type = number
 }
-
 variable "subnet_ids" {
-  type        = list(string)
-  description = "Subnets for FARGATE tasks"
+  type = list(string)
 }
-
 variable "security_group_ids" {
-  type        = list(string)
-  description = "SGs for FARGATE tasks"
+  type = list(string)
 }
-
 variable "execution_role_arn" {
-  type        = string
-  description = "ECS Task Execution Role ARN"
+  type = string
 }
-
 variable "task_role_arn" {
-  type        = string
-  description = "IAM Role ARN for app permissions"
+  type = string
 }
-
 variable "log_group_name" {
-  type        = string
-  description = "CloudWatch log group name"
+  type = string
 }
-
 variable "ecs_count" {
-  type        = number
-  default     = 1
-  description = "Desired Fargate task count"
+  type    = number
+  default = 1
 }
-
 variable "region" {
-  type        = string
-  description = "AWS region (for awslogs driver)"
+  type = string
 }
-
 variable "cpu" {
-  type        = string
-  default     = "256"
-  description = "vCPU units"
+  type    = string
+  default = "256"
 }
-
 variable "memory" {
-  type        = string
-  default     = "512"
-  description = "Memory (MiB)"
+  type    = string
+  default = "512"
+}
+variable "target_group_arn" {
+  type    = string
+  default = ""
+}
+variable "min_capacity" {
+  type    = number
+  default = 2
+}
+variable "max_capacity" {
+  type    = number
+  default = 4
+}
+variable "cpu_target" {
+  type    = number
+  default = 70
 }

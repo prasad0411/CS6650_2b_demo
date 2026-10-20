@@ -1,8 +1,7 @@
-**.tfvars
-**.tfstate
-**.tfstate.*
-**/.terraform/*.tfstate*
-.terraform/
+terraform/.terraform/
+terraform/*.tfstate*
+terraform/.terraform.lock.hcl
 *.tfvars
 src/server
 ip.env
+alb.env

@@ -30,3 +30,18 @@ variable "log_retention_days" {
   type    = number
   default = 7
 }
+
+variable "min_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "max_capacity" {
+  type    = number
+  default = 4
+}
+
+variable "cpu_target" {
+  type    = number
+  default = 70
+}
