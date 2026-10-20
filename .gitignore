@@ -5,3 +5,4 @@ terraform/.terraform.lock.hcl
 src/server
 ip.env
 alb.env
+locust/__pycache__/
